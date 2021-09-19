@@ -121,10 +121,7 @@ async function connectToSerial(deviceId: string) {
 
     serial.on('data', data => {
         if ((serial && serial.isConnected() && inferenceStarted) || rawArgv) {
-            // process.stdout.write(data.toString('ascii'));
-
-            // try to also
-            //sarasOnData(data);
+            process.stdout.write(data.toString('ascii'));
             onData(data)
         }
     });
@@ -145,7 +142,8 @@ async function connectToSerial(deviceId: string) {
                 possiblePred.indexOf("Starting")
             );
             let withoutLineBreaks = part.replace("\n","");
-            let trimmed = withoutLineBreaks.replace(/\s+/g, ' ').trim();
+            let withoutColon = withoutLineBreaks.replace(/:/g,"");
+            let trimmed = withoutColon.replace(/\s+/g, ' ').trim();
             
             if(isRelevantString(trimmed))
             {
@@ -161,8 +159,7 @@ async function connectToSerial(deviceId: string) {
 
     function isRelevantString(data: string) {
 
-        // console.log("use classes: " + classesArgv) // e.g no_noise_unknown_yes
-        let classes = classesArgv?.split("_");
+        let classes = classesArgv?.split("_"); // e.g no_noise_unknown_yes
         if(classes && classes.every(substring=>data.includes(substring)))
         {
             return true;
@@ -172,14 +169,40 @@ async function connectToSerial(deviceId: string) {
 
     async function sendToAzure(data: string) {
 
-        let azEndpoint = "http://localhost:7071/api/eirundata"; // eiConfig.endpoints.internal.aziot
+        // TODO: make not static
+        let azEndpoint = "http://localhost:7071/api/eirundata";
 
+        let predictions: any = [];
+        let maxScore: number = 0;
+        let resultLabel: string = "none";
+
+        let splitted = data.split(" ");
+        while (splitted.length > 0) {
+            let arrayElement = splitted.splice(0,2);
+
+            const labelValue = arrayElement[0];
+            const scoreValue: number = +arrayElement[1];
+        
+            predictions.push({ 
+                label: labelValue,
+                score: scoreValue
+            });
+
+            maxScore = (scoreValue > maxScore) ? scoreValue : maxScore;
+            resultLabel = (scoreValue > maxScore) ? labelValue : resultLabel;
+        }
+
+        var payloadData = {
+            predictions: predictions,
+            maxScore: maxScore,
+            resultLabel: resultLabel
+        };
+        
         let ingestionPayload = {
-            payload: data
+            payload: payloadData
         };
         let encoded = JSON.stringify(ingestionPayload);
 
-        // Sara Added
         await request.post(azEndpoint, {
             headers: {
                 'Content-Type': 'application/json'
@@ -187,7 +210,6 @@ async function connectToSerial(deviceId: string) {
             body: encoded,
             encoding: 'binary'
         });
-        // Sara Added end
     }
 
     // SARA: above

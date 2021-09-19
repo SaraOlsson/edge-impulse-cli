@@ -12,6 +12,8 @@
     "edge-impulse-daemon": "build/cli/daemon.js",
     "edge-impulse-uploader": "build/cli/uploader.js",
     "edge-impulse-data-forwarder": "build/cli/data-forwarder.js",
+    "edge-impulse-az-data-forwarder": "build/cli/az-data-forwarder.js",
+    "edge-impulse-run-impulse-az-forwarder": "build/cli/run-impulse-az-forwarder.js",
     "edge-impulse-run-impulse": "build/cli/run-impulse.js",
     "eta-flash-tool": "build/cli/eta-flash-tool/flashtool.js",
     "himax-flash-tool": "build/cli/himax-flash-tool/flashtool.js",
