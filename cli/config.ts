@@ -29,7 +29,8 @@ export interface SerialConfig {
             hmacKey: string,
             projectId: number,
             samplingFreq: number,
-            sensors: string[]
+            sensors: string[],
+            azDevice: string | null
         }
     };
     daemonDevices: {
@@ -62,6 +63,7 @@ export interface EdgeImpulseEndpoints {
         api: string;
         apiWs: string;
         ingestion: string;
+        aziot: string;
     };
     device: {
         ws: string;
@@ -235,6 +237,8 @@ export class Config {
         apiEndpointInternal += '/v1';
         apiEndpointExternal += '/v1';
 
+        let aziotEndpointInternal = "http://localhost:7071/api/eidata";
+
         this._api = {
             login: new LoginApi(apiEndpointInternal),
             devices: new DevicesApi(apiEndpointInternal),
@@ -259,7 +263,9 @@ export class Config {
                 ws: wsEndpointInternal,
                 api: apiEndpointInternal,
                 apiWs: apiWsEndpointInternal,
-                ingestion: ingestionEndpointInternal
+                ingestion: ingestionEndpointInternal,
+                aziot: aziotEndpointInternal
+
             }
         };
 
@@ -351,7 +357,8 @@ export class Config {
         hmacKey: string,
         projectId: number,
         samplingFreq: number,
-        sensors: string[]
+        sensors: string[],
+        azDevice: string | null
     }) {
         let config = await this.load();
         config.dataForwarderDevices[deviceId] = data;

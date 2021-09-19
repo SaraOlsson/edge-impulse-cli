@@ -35,7 +35,7 @@ const whichDeviceArgvIx = process.argv.indexOf('--which-device');
 const whichDeviceArgv = whichDeviceArgvIx !== -1 ? Number(process.argv[whichDeviceArgvIx + 1]) : undefined;
 
 const cliOptions = {
-    appName: 'Edge Impulse data forwarder',
+    appName: 'Edge Impulse to Azure IoT Hub data forwarder',
     apiKeyArgv: apiKeyArgv,
     cleanArgv: cleanArgv,
     devArgv: devArgv,
@@ -45,7 +45,8 @@ const cliOptions = {
     getProjectFromConfig: async (deviceId: string | undefined) => {
         if (!deviceId) return undefined;
         return await configFactory.getDataForwarderDevice(deviceId);
-    }
+    },
+    connectAzMsg: 'To which Azure IoT Hub device do you want to connect this device?'
 };
 
 let configFactory: Config;
@@ -76,6 +77,7 @@ let configFactory: Config;
         console.log('    Websocket:', config.endpoints.internal.ws);
         console.log('    API:      ', config.endpoints.internal.api);
         console.log('    Ingestion:', config.endpoints.internal.ingestion);
+        console.log('    Azure IoT:', config.endpoints.internal.aziot);
         console.log('');
 
         let serialPath = await findSerial(whichDeviceArgv);
@@ -216,7 +218,7 @@ async function connectToSerial(eiConfig: EdgeImpulseConfig, serialPath: string, 
                 catch (ex2) {
                     let ex = <Error>ex2;
                     console.error(SERIAL_PREFIX, 'Cannot set API key. Try running this application via:');
-                    console.error(SERIAL_PREFIX, '\tedge-impulse-data-forwarder --clean');
+                    console.error(SERIAL_PREFIX, '\tedge-impulse-az-data-forwarder --clean');
                     console.error(SERIAL_PREFIX, 'To reset any state');
                     console.error(SERIAL_PREFIX, ex.message || ex);
                 }
@@ -373,6 +375,10 @@ async function connectToSerial(eiConfig: EdgeImpulseConfig, serialPath: string, 
                     hmac.update(encoded);
                     let signature = hmac.digest().toString('hex');
 
+
+                    let azPayload = {azDevice: dataForwarderConfig.azDevice, payload: ingestionPayload};
+                    let azEncoded = JSON.stringify(azPayload);
+
                     // update the signature in the message and re-encode
                     ingestionPayload.signature = signature;
                     encoded = JSON.stringify(ingestionPayload);
@@ -385,6 +391,19 @@ async function connectToSerial(eiConfig: EdgeImpulseConfig, serialPath: string, 
                     if (ws) {
                         ws.send(cbor.encode(res5));
                     }
+                    
+                    // Sara Added
+                    await request.post(eiConfig.endpoints.internal.aziot, {
+                        headers: {
+                            'x-api-key': dataForwarderConfig.apiKey,
+                            'x-file-name': encodeLabel(s.label + '.json'),
+                            'x-label': encodeLabel(s.label),
+                            'Content-Type': 'application/json'
+                        },
+                        body: azEncoded,
+                        encoding: 'binary'
+                    });
+                    // Sara Added end
 
                     await request.post(eiConfig.endpoints.internal.ingestion + s.path, {
                         headers: {
@@ -497,6 +516,20 @@ async function getAndConfigureProject(eiConfig: EdgeImpulseConfig, serial: Seria
     const { projectId, devKeys } = await setupCliApp(configFactory, eiConfig, cliOptions,
         (await serial.getMACAddress()) || undefined);
 
+    let azDevice = null; // move
+    if(!azDevice)
+    {
+        let connectionString = <string>(await inquirer.prompt([{
+            type: 'input',
+            name: 'connectionString',
+            message: 'Enter the connection string of your device',
+            default: "HostName=P15-IoTHub-gkx6k.azure-devices.net;DeviceId=saras-dev;SharedAccessKey=iPbmgt7F8tmXWuG1E3zD7u/AuaR8afm/iXXIgXYbZCc="
+        }])).connectionString;
+        
+        azDevice = connectionString;
+        console.log('connectionString: ' + connectionString);
+    }
+
     // check what the sampling freq is for this device and how many sensors there are?
     let sensorInfo = await getSensorInfo(serial, frequencyArgv);
 
@@ -524,7 +557,7 @@ async function getAndConfigureProject(eiConfig: EdgeImpulseConfig, serial: Seria
         hmacKey: devKeys.hmacKey || '0000',
         samplingFreq: sensorInfo.samplingFreq,
         sensors: axes.split(',').map(n => n.trim()),
-        azDevice: null
+        azDevice: azDevice
     };
 }
 
