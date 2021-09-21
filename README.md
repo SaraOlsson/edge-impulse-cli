@@ -1,3 +1,7 @@
+## ! Note 
+
+This is a fork of the main repo which implements two extra  versions of the tools edge-impulse-az-data-forwarder (*edge-impulse-az-data-forwarder*) and edge-impulse-run-impulse (*edge-impulse-run-impulse-az-forwarder*)
+
 # Edge Impulse CLI tools
 
 Command-line interface tools for [Edge Impulse](https://www.edgeimpulse.com). We make things smarter by enabling developers to create the next generation of intelligent device solutions with embedded Machine Learning.
@@ -12,18 +16,7 @@ This package consists of four tools (click to see their respective documentation
 * [eta-flash-tool](https://docs.edgeimpulse.com/docs/cli-eta-flash-tool) - to flash the Eta Compute ECM3532 AI Sensor.
 * [himax-flash-tool](https://docs.edgeimpulse.com/docs/cli-himax-flash-tool) - to flash the Himax WE-I Plus development board.
 
-## Installation
-
-1. Install [Node.js](https://nodejs.org/en/) v12 or higher on your host computer.
-2. Install the CLI tools via:
-
-    ```
-    $ npm install -g edge-impulse-cli
-    ```
-
-Afterwards you should have the tools available in your PATH.
-
-## Building from source
+## Installation - Building from source
 
 If you're making changes to the CLI you can build from source.
 
@@ -56,6 +49,10 @@ If you're adding support for a new development board, and you want to debug how 
 Then build from source.
 
 ## Troubleshooting
+
+### npm run build does not work
+
+Open PowerShell and navigate to root of this repo. Run the build command directly in the terminal (*./node_modules/.bin/tsc -p .*)
 
 ### Tools version "2.0" is unrecognized (Windows)
 

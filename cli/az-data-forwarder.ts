@@ -391,6 +391,8 @@ async function connectToSerial(eiConfig: EdgeImpulseConfig, serialPath: string, 
                     if (ws) {
                         ws.send(cbor.encode(res5));
                     }
+
+                    console.log(SERIAL_PREFIX, 'Uploading sample to', eiConfig.endpoints.internal.aziot + '...');
                     
                     // Sara Added
                     await request.post(eiConfig.endpoints.internal.aziot, {
@@ -523,7 +525,7 @@ async function getAndConfigureProject(eiConfig: EdgeImpulseConfig, serial: Seria
             type: 'input',
             name: 'connectionString',
             message: 'Enter the connection string of your device',
-            default: "HostName=P15-IoTHub-gkx6k.azure-devices.net;DeviceId=saras-dev;SharedAccessKey=iPbmgt7F8tmXWuG1E3zD7u/AuaR8afm/iXXIgXYbZCc="
+            default: "HostName=<your-iothub-name>.azure-devices.net;DeviceId=<your-device-id>;SharedAccessKey=<your-access-key>"
         }])).connectionString;
         
         azDevice = connectionString;

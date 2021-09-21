@@ -24,6 +24,8 @@ const classesArgvIx = process.argv.indexOf('--classes');
 const classesArgv = classesArgvIx !== -1 ? process.argv[classesArgvIx + 1] : undefined;
 const whichDeviceArgvIx = process.argv.indexOf('--which-device');
 const whichDeviceArgv = whichDeviceArgvIx !== -1 ? Number(process.argv[whichDeviceArgvIx + 1]) : undefined;
+const azDeviceArgvIx = process.argv.indexOf('--az-device');
+const azDeviceArgv = azDeviceArgvIx !== -1 ? process.argv[azDeviceArgvIx + 1] : undefined;
 
 let stdinAttached = false;
 let serial: SerialConnector | undefined;
@@ -169,6 +171,12 @@ async function connectToSerial(deviceId: string) {
 
     async function sendToAzure(data: string) {
 
+        if(!azDeviceArgv)
+        {
+            console.log(SERIAL_PREFIX, 'No connection string given in config, cannot send to Azure...');
+            return;
+        }
+
         // TODO: make not static
         let azEndpoint = "http://localhost:7071/api/eirundata";
 
@@ -188,8 +196,10 @@ async function connectToSerial(deviceId: string) {
                 score: scoreValue
             });
 
-            maxScore = (scoreValue > maxScore) ? scoreValue : maxScore;
-            resultLabel = (scoreValue > maxScore) ? labelValue : resultLabel;
+            let newMax: boolean = (scoreValue > maxScore);
+            resultLabel = newMax ? labelValue : resultLabel;
+            maxScore = newMax ? scoreValue : maxScore;
+            
         }
 
         var payloadData = {
@@ -199,9 +209,12 @@ async function connectToSerial(deviceId: string) {
         };
         
         let ingestionPayload = {
-            payload: payloadData
+            payload: payloadData,
+            azDevice: azDeviceArgv
         };
         let encoded = JSON.stringify(ingestionPayload);
+
+        console.log(SERIAL_PREFIX, 'Uploading sample to', azEndpoint + '...');
 
         await request.post(azEndpoint, {
             headers: {
